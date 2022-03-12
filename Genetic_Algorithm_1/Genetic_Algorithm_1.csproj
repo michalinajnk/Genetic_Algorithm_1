@@ -6,10 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotLiquid" Version="2.2.595" />
     <PackageReference Include="Grpc.Core" Version="2.44.0" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0-beta01" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Numpy" Version="3.7.1.28" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
   </ItemGroup>
 

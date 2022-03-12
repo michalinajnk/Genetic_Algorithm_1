@@ -21,14 +21,32 @@ namespace Genetic_Algorithm_1
             StreamReader cs = new StreamReader(_filePath + "/data/easy/easy_flow.json");
             String fileCost = fs.ReadToEnd();
             String fileFlow = cs.ReadToEnd();
-            Cost.setCost(fileFlow, fileCost);
+
+            Cost cost = new Cost(fileCost, fileFlow);
             Population populationZero = new Population(5, 9, new Tuple<int, int>(3,3));
-            ChromosomeCode theBest = populationZero.getTheBest(5);
+           // populationZero.print();
+
+            ChromosomeCode theBest = populationZero.getTheBest(2450, cost);
+            Console.WriteLine(theBest.getTotalCost(cost));
             theBest.print();
+           // int[, ] tb = theBest.getMatrixManhattanDist();
+           // Console.WriteLine(" ");
+
+           // MatrixUtil<int>.print(tb);
+            
+            // MatrixUtil<int>.print(tb.getMatrixManhattanDist());
+
+           // MatrixUtil<int>.print(cost.C);
+            //Console.WriteLine(" ");
+            //MatrixUtil<int>.print(cost.F);
+
+           
+          
+
 
 
             /*
-            List<int> toPermute = Enumerable.Range(1, 9).ToList();
+            List<int> toPermute = Enumerable.Range(0, 8).ToList();
             print(toPermute);
            
 

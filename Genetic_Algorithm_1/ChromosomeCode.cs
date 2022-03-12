@@ -24,34 +24,37 @@ namespace Genetic_Algorithm_1
 
         }
 
+        public void  print() {
+            foreach (ChromosomeCode code in population) {
+                code.print();
+            }
+        }
+
         public List<ChromosomeCode> generatePopulationZero()
         {
             List<ChromosomeCode> population = new List<ChromosomeCode>();
-            foreach (int value in Enumerable.Range(0, numberOfCodes))
+            ChromosomeCode current = generator.generateOne();
+            population.Add(current);
+            foreach (int value in Enumerable.Range(1, numberOfCodes))
             {
-                ChromosomeCode next = generator.generateOne();
-                next.fillChromosomeValues();
-                while (population.Contains(next))
-                {
-                    next.fillChromosomeValues();
-                }
+                ChromosomeCode next = generator.generateNext(current);
                 population.Add(next);
             }
             return population;
         }
 
+        
+
 
         //funkcja przystosowania
-        public ChromosomeCode getTheBest(int numOfCodes) {
+        public ChromosomeCode getTheBest(int numOfCodes, Cost cost) {
             ChromosomeCode theBestOne = null;
-            ChromosomeCode next;
+            ChromosomeCode next = generator.generateOne();
 
             for (int i = 0; i < numOfCodes; i++)
             {
-
-                next = generator.generateOne();
-                next.fillChromosomeValues();
-                if (theBestOne == null || theBestOne.getTotalCost() > next.getTotalCost()) {
+                next = generator.generateNext(next);
+                if (theBestOne == null || theBestOne.getTotalCost(cost) > next.getTotalCost(cost)) {
                     theBestOne = next;
                 }
             }
@@ -60,7 +63,7 @@ namespace Genetic_Algorithm_1
 
 
 
-        //ratio as AccessViolationException percent value
+        //ratio as percent value
 
         /*
         public ChromosomeCode filterTheBest(double ratio)
@@ -96,6 +99,13 @@ namespace Genetic_Algorithm_1
             return new ChromosomeCode(facilitySize, numberOfMachines);
         }
 
+        public ChromosomeCode generateNext(ChromosomeCode prev) {
+            return new ChromosomeCode(prev, facilitySize, numberOfMachines);
+            
+        }
+
+
+
 
     }
 
@@ -110,8 +120,53 @@ namespace Genetic_Algorithm_1
         {
             chromosomeCode = new int[facilitySize.Item1, facilitySize.Item2];
             numberOfMachines = numOfMach;
+            fillMatrix(numOfMach, 0);
 
         }
+
+        public void fillMatrix(int end, int defaultValue)
+        {
+            List<int> fillFrom = Enumerable.Range(0, end).ToList();
+            var iter = fillFrom.GetEnumerator();
+
+
+            for (int i = 0; i < MatrixUtil<int>.getNumOfRows(chromosomeCode); i++)
+            {
+                for (int j = 0; j < MatrixUtil<int>.getNumOfCols(chromosomeCode); j++)
+                {
+                    if (iter.MoveNext())
+                    {
+                        chromosomeCode[i, j] = iter.Current;
+                    }
+                    else
+                    {
+                        chromosomeCode[i, j] = defaultValue;
+                    }
+                }
+
+            }
+
+
+        }
+
+        public  void permutateMatrix(int numOfSwapped, int defaultVal)
+        {
+            List<int> permutation = PermutationUtil<int>.permutate(MatrixUtil<int>.rewriteToList(chromosomeCode), numOfSwapped);
+            fillMatrix(numberOfMachines-1, defaultVal);
+        }
+
+        public ChromosomeCode(ChromosomeCode chromosome, Tuple<int, int> facilitySize, int numOfMach)
+        {
+            chromosomeCode = MatrixUtil<int>.permutateMatrix(3, chromosome.chromosomeCode, 0);
+            this.numberOfMachines = numOfMach;
+         
+
+        }
+
+
+   
+
+      
 
         public int Compare(ChromosomeCode other) {
 
@@ -128,19 +183,19 @@ namespace Genetic_Algorithm_1
        
         public void fillChromosomeValues()
         {
-            List<int> fillfrom = new List<int>(Enumerable.Range(1, numberOfMachines));
-            MatrixUtil<int>.fillMatrix(fillfrom, chromosomeCode, 0); 
+            List<int> fillfrom = new List<int>(Enumerable.Range(0, numberOfMachines));
+            MatrixUtil<int>.fillMatrix(fillfrom, chromosomeCode, 0);
+           
         }
 
         public void print() {
 
-           MatrixUtil<int>.print(Cost.getC());
            MatrixUtil<int>.print(chromosomeCode);
-           Console.WriteLine("Total Cost is: " + getTotalCost());
+
 ;       }
 
 
-        public int getTotalCost()
+        public int getTotalCost(Cost cost)
         {
 
             int totalCost = 0;
@@ -151,14 +206,14 @@ namespace Genetic_Algorithm_1
                 {
 
 
-                    totalCost += Cost.getMatrixCellCost(i, j) * getMatrixManhattanDist()[i, j] * Cost.getMatrixCellFlow(i, j);
+                    totalCost += cost.getMatrixCellCost(i, j) * getMatrixManhattanDist()[i, j] * cost.getMatrixCellFlow(i, j);
                 }
             }
 
             return totalCost;
         }
 
-        int[,] getMatrixManhattanDist()
+        public int[,] getMatrixManhattanDist()
         {
             int[,] distanceMatrix = new int[numberOfMachines, numberOfMachines];
             for (int i = 0; i < numberOfMachines; i++)
@@ -175,7 +230,7 @@ namespace Genetic_Algorithm_1
 
 
 
-        int getMatrixManhattanDist(int machine1, int machine2)
+        public int getMatrixManhattanDist(int machine1, int machine2)
         {
             Tuple<int, int> machine1Indices = getCellIndices(machine1);
             Tuple<int, int> machine21Indices = getCellIndices(machine2);
@@ -207,99 +262,89 @@ namespace Genetic_Algorithm_1
         
     }
 
-    public static class Cost<T> {
+    public class Cost {
 
-        public class Storage {
-            String JSONFlowFile;
-            String JSONCostFile;
+        private String JSONCostFile;
+        private String JSONFlowFile;
 
-            public Storage(String flow, String cost) {
-
-                this.JSONCostFile = cost;
-                this.JSONFlowFile = flow;
-            }
-
-            public MatrixCellCost[,] C= setMatrixCost(JSONCostFile);
-            public MatrixCellFlow[,] F = setMatrixCost(JSONCostFile);
-        }
-
-        
-
-        public static  void  setCost(String FileNameFlow, String FileNameCost) {
-            setMatrixCost(FileNameCost);
-            setMatrixFlow(FileNameFlow);
-        }
+        public int[,] C { get; set; }
+        public int[,] F { get; set; }
 
 
-        private static int getMatrixSize(List<MatrixCell> list) {
-
-            return Math.Max(list.Max(data => data.dest), list.Max(data => data.source));
+        public Cost(String JSONCostFile, String JSONFlowFile) { 
+            this.JSONCostFile = JSONCostFile;
+            this.JSONFlowFile = JSONFlowFile;
+            setMatrixCost(JSONCostFile);
+            setMatrixFlow(JSONFlowFile);
 
         }
 
 
-        public  MatrixCellCost[,] getC() { return C; }
-        public  MatrixCellFlow[,] getF() { return F; }
+     
 
 
 
         //read from file
-        private static MatrixCellCost[,] setMatrixCost(String FileName)
+        private  void setMatrixCost(String JSONCostFile)
         {
-            int iterator = 0;
-            List<MatrixCellCost>  mtxDataCost = JsonConvert.DeserializeObject<List<MatrixCellCost>>(FileName);
-            MatrixCellCost[,] mtx = new MatrixCellCost[getMatrixSize(mtxDataCost), getMatrixSize(mtxDataCost)];
-            for (int i = 0; i < getMatrixSize(mtxDataCost); i++) {
-                for (int j = 0; j < getMatrixSize(mtxDataCost); j++) {
-                    mtx[i,j] = mtxDataCost.ElementAt(iterator++ % 36);
+            if (C == null)
+            {
+
+                List<MatrixCellCost> cost = JsonConvert.DeserializeObject<List<MatrixCellCost>>(JSONCostFile);
+                MatrixCells<MatrixCellCost> cells = new MatrixCells<MatrixCellCost>(cost);
+                
+                C = new int[cells.getMaxCellValue()+1, cells.getMaxCellValue()+1];
+                for (int i = 0; i < cells.getMaxCellValue()+1; i++)
+                {
+                    for (int j = 0; j < cells.getMaxCellValue()+1; j++)
+                    {
+                        C[i, j] = cells.getElemAt(i, j, cells.cells);
+                    }
+
                 }
+
             }
-            return mtx;
+
+        }
+
+        private  void setMatrixFlow(String JSONFlowFile)
+        {
+            if (F == null)
+            {
+                
+                
+                List<MatrixCellFlow> cost = JsonConvert.DeserializeObject<List<MatrixCellFlow>>(JSONFlowFile);
+                MatrixCells<MatrixCellFlow> cells = new MatrixCells<MatrixCellFlow>(cost);
+                F = new int [cells.getMaxCellValue()+1, cells.getMaxCellValue()+1];
+                for (int i = 0; i < cells.getMaxCellValue()+1; i++)
+                {
+                    for (int j = 0; j < cells.getMaxCellValue()+1; j++)
+                    {
+                        F[i, j] = cells.getElemAt(i,j, cells.cells);
+                    }
+                }
+
+            }
 
         }
 
 
         //read From file
-        private static MatrixCellFlow[,] setMatrixFlow(String FileName)
-        {
-            int iterator = 0;
-            List<MatrixCellFlow>  mtxDataFlow = JsonConvert.DeserializeObject<List<MatrixCellFlow>>(FileName);
-            MatrixCellFlow mtx = new MatrixCellFlow[getMatrixSize((MatrixCellCost) mtxDataFlow), getMatrixSize((MatrixCellCost )mtxDataFlow)];
-            for(int i = 0; i < getMatrixSize( (MatrixCellCost) mtxDataCost); i++)
-            {
-                for (int j = 0; j < getMatrixSize((MatrixCellCost) mtxDataCost); j++)
-                {
-                    F[i, j] = mtxDataFlow.ElementAt(iterator++ % 36);
-                }
-            }
-            return mtx;
-        }
+     
 
 
         public  int getMatrixCellCost(int source, int dest) {
-            if (C[source, dest] != null)
-            {
-                return C[source, dest].cost;
-            }
-            else
-            {
-                return 0;
-            }
+           
+            return C[source, dest];
+          
         }
 
-        public  int getMatrixCellFlow(int source, int dest)
+        public int getMatrixCellFlow(int source, int dest)
         {
-            if (F[source, dest] != null)
-            {
-                return F[source, dest].flow;
-            }
 
-            else
-            {
-                return 0;
-            }
+            return F[source, dest];
         }
-
+          
 
         
     }

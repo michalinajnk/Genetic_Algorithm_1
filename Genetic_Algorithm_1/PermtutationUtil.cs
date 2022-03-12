@@ -35,9 +35,12 @@ namespace Genetic_Algorithm_1
 
         public static T[,]  permutateMatrix(int numOfSwapped, T[,] matrix, T defaultVal) {
             List<T> permutation = PermutationUtil<T>.permutate(rewriteToList(matrix), numOfSwapped);
-            fillMatrix(permutation,matrix, defaultVal);
-            return matrix;
+            T[,] mtx = new T[MatrixUtil<T>.getNumOfCols(matrix), MatrixUtil<T>.getNumOfRows(matrix)];
+            fillMatrix(permutation,mtx, defaultVal);
+            return mtx;
         }
+
+       
 
         public static void print(T[,] matrix)
         {
@@ -86,6 +89,11 @@ namespace Genetic_Algorithm_1
             List<T> secArr = rewriteToList(matrix2);
             return firstArr.Equals(secArr);
                 
+        }
+
+        internal static void print(MatrixCellCost[,] matrixCellCost)
+        {
+            throw new NotImplementedException();
         }
     }
 
