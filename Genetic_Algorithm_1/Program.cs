@@ -29,19 +29,47 @@ namespace Genetic_Algorithm_1
             ChromosomeCode theBest = populationZero.getTheBest(2450, cost);
             Console.WriteLine(theBest.getTotalCost(cost));
             theBest.print();
-           // int[, ] tb = theBest.getMatrixManhattanDist();
-           // Console.WriteLine(" ");
+            // int[, ] tb = theBest.getMatrixManhattanDist();
+            // Console.WriteLine(" ");
 
-           // MatrixUtil<int>.print(tb);
-            
+            // MatrixUtil<int>.print(tb);
+
             // MatrixUtil<int>.print(tb.getMatrixManhattanDist());
 
-           // MatrixUtil<int>.print(cost.C);
+            // MatrixUtil<int>.print(cost.C);
             //Console.WriteLine(" ");
             //MatrixUtil<int>.print(cost.F);
 
-           
-          
+            
+            StreamReader fs2 = new StreamReader(_filePath + "/data/hard/hard_cost.json");
+            StreamReader cs2 = new StreamReader(_filePath + "/data/hard/hard_flow.json");
+            String fileCost2 = fs2.ReadToEnd();
+            String fileFlow2 = cs2.ReadToEnd();
+
+            Cost cost2 = new Cost(fileCost2, fileFlow2);
+            Population populationZero2 = new Population(5, 24, new Tuple<int, int>(6, 5));
+            // populationZero.print();
+
+            ChromosomeCode theBest2 = populationZero2.getTheBest(5, cost2);
+            Console.WriteLine(theBest2.getTotalCost(cost2));
+            theBest2.print();
+            
+
+            
+            StreamReader fs3 = new StreamReader(_filePath + "/data/flat/flat_cost.json");
+            StreamReader cs3 = new StreamReader(_filePath + "/data/flat/flat_flow.json");
+            String fileCost3 = fs3.ReadToEnd();
+            String fileFlow3 = cs3.ReadToEnd();
+
+            Cost cost3 = new Cost(fileCost3, fileFlow3);
+            Population populationZero3 = new Population(5, 12, new Tuple<int, int>(1, 12));
+            // populationZero.print();
+
+            ChromosomeCode theBest3 = populationZero3.getTheBest(5, cost3);
+            Console.WriteLine(theBest3.getTotalCost(cost3));
+            theBest3.print();
+            
+
 
 
 
