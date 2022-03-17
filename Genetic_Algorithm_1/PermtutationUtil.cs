@@ -70,6 +70,10 @@ namespace Genetic_Algorithm_1
             return matrix.GetLength(0);
         }
 
+        public static int getNumOfElements(T[,] matrix) {
+            return getNumOfCols(matrix) * getNumOfRows(matrix);
+        }
+
         public static List<T> rewriteToList(T[,] matrix)
         {
             List<T> rewritten = new List<T>();
@@ -82,6 +86,15 @@ namespace Genetic_Algorithm_1
             }
             return rewritten;
         }
+
+        public static T[] rewriteToArr(T[,] matrix)
+        {
+           return rewriteToList(matrix).ToArray();
+        }
+
+       
+
+
 
 
         public static bool Equals(T[,] matrix1, T[,] matrix2) {
@@ -144,6 +157,39 @@ namespace Genetic_Algorithm_1
         {
             (arr[indexA], arr[indexB]) = (arr[indexB], arr[indexA]);
            
+        }
+
+    }
+
+    public static class MathUtil {
+        public static float normalizeData(float max, float min, float toNormalize) {
+            return (toNormalize - min) / max - min;
+        }
+
+        public static float nextFloat(float min, float max)
+        {
+            System.Random random = new System.Random();
+            double val = (random.NextDouble() * (max - min) + min);
+            return (float)val;
+        }
+
+        public static void printList(List<int> list) {
+            Console.WriteLine("");
+            foreach (int elem in list) {
+                Console.Write(elem +", ");
+            }
+            Console.WriteLine("" );
+        }
+
+
+        public static void printList(int[] arr)
+        {
+            Console.WriteLine("");
+            foreach (int elem in arr)
+            {
+                Console.Write(arr +", ");
+            }
+            Console.WriteLine("");
         }
 
     }

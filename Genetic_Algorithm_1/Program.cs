@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Grpc.Core;
-using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
-using Newtonsoft.Json;
+using Numpy;
+
+
 
 
 
@@ -23,12 +22,59 @@ namespace Genetic_Algorithm_1
             String fileFlow = cs.ReadToEnd();
 
             Cost cost = new Cost(fileCost, fileFlow);
-            Population populationZero = new Population(5, 9, new Tuple<int, int>(3,3));
-           // populationZero.print();
+            Population populationZero = new Population(5, 9, new Tuple<int, int>(3, 3), cost);
+            // populationZero.print();
 
-            ChromosomeCode theBest = populationZero.getTheBest(2450, cost);
-            Console.WriteLine(theBest.getTotalCost(cost));
-            theBest.print();
+            MatrixUtil<int>.print(populationZero.population[0].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[4].chromosomeCode);
+
+            List<ChromosomeCode> child =populationZero.OnePointCrossOverTwoChilds(populationZero.population[0], populationZero.population[4]);
+
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            MatrixUtil<int>.print(child[0].chromosomeCode);
+            MatrixUtil<int>.print(child[1].chromosomeCode);
+
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine(populationZero.population[1].weight);
+            MatrixUtil<int>.print(populationZero.population[1].chromosomeCode);
+
+            populationZero.mutation(populationZero.population[1]);
+
+            MatrixUtil<int>.print(populationZero.population[1].chromosomeCode);
+
+
+
+
+
+            // ChromosomeCode code = populationZero.population.ElementAt(20);
+            // Console.WriteLine("Fitness Value: " + code.fitnessValue + ", total Cost: " + code.totalCost);
+
+            /*
+            Console.WriteLine("{0:N6}", code.fitnessValue);
+
+            foreach(ChromosomeCode cd in populationZero.population) {
+                Console.WriteLine("{0:N6}", cd.fitnessValue);
+
+            }
+            */
+
+
+            foreach (ChromosomeCode cd in populationZero.population)
+            {
+               
+                Console.WriteLine("{0:N6}", cd.probOfBeingSelected + ", total Cost: " + cd.totalCost);
+
+            }
+
+           
+
+
+
+
             // int[, ] tb = theBest.getMatrixManhattanDist();
             // Console.WriteLine(" ");
 
@@ -40,17 +86,17 @@ namespace Genetic_Algorithm_1
             //Console.WriteLine(" ");
             //MatrixUtil<int>.print(cost.F);
 
-            
+            /*
             StreamReader fs2 = new StreamReader(_filePath + "/data/hard/hard_cost.json");
             StreamReader cs2 = new StreamReader(_filePath + "/data/hard/hard_flow.json");
             String fileCost2 = fs2.ReadToEnd();
             String fileFlow2 = cs2.ReadToEnd();
 
             Cost cost2 = new Cost(fileCost2, fileFlow2);
-            Population populationZero2 = new Population(5, 24, new Tuple<int, int>(6, 5));
+            Population populationZero2 = new Population(5, 24, new Tuple<int, int>(6, 5), cost2);
             // populationZero.print();
 
-            ChromosomeCode theBest2 = populationZero2.getTheBest(5, cost2);
+            ChromosomeCode theBest2 = populationZero2.generateAndGetTheBest(5);
             Console.WriteLine(theBest2.getTotalCost(cost2));
             theBest2.print();
             
@@ -62,14 +108,14 @@ namespace Genetic_Algorithm_1
             String fileFlow3 = cs3.ReadToEnd();
 
             Cost cost3 = new Cost(fileCost3, fileFlow3);
-            Population populationZero3 = new Population(5, 12, new Tuple<int, int>(1, 12));
+            Population populationZero3 = new Population(5, 12, new Tuple<int, int>(1, 12), cost3);
             // populationZero.print();
 
-            ChromosomeCode theBest3 = populationZero3.getTheBest(5, cost3);
+            ChromosomeCode theBest3 = populationZero3.generateAndGetTheBest(5);
             Console.WriteLine(theBest3.getTotalCost(cost3));
             theBest3.print();
             
-
+            */
 
 
 
@@ -112,9 +158,6 @@ namespace Genetic_Algorithm_1
 
       
 
-
-     
-        
 
     }
 
