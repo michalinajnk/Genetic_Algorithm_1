@@ -10,7 +10,7 @@ namespace Genetic_Algorithm_1
 
     public static class MatrixUtil<T> {
         
-        public static void fillMatrix(List<T> fillFrom, T[,] matrix, T defaultValue)
+        public static void fillMatrixFromList(List<T> fillFrom, T[,] matrix, T defaultValue)
         {
             var iter = fillFrom.GetEnumerator();
            
@@ -27,16 +27,14 @@ namespace Genetic_Algorithm_1
                         matrix[i, j] = defaultValue;
                     }
                 }
-
             }
            
-
         }
 
         public static T[,]  permutateMatrix(int numOfSwapped, T[,] matrix, T defaultVal) {
             List<T> permutation = PermutationUtil<T>.permutate(rewriteToList(matrix), numOfSwapped);
             T[,] mtx = new T[MatrixUtil<T>.getNumOfCols(matrix), MatrixUtil<T>.getNumOfRows(matrix)];
-            fillMatrix(permutation,mtx, defaultVal);
+            fillMatrixFromList(permutation,mtx, defaultVal);
             return mtx;
         }
 

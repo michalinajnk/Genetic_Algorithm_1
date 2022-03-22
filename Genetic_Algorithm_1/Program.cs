@@ -22,13 +22,47 @@ namespace Genetic_Algorithm_1
             String fileFlow = cs.ReadToEnd();
 
             Cost cost = new Cost(fileCost, fileFlow);
-            Population populationZero = new Population(5, 9, new Tuple<int, int>(3, 3), cost);
-            // populationZero.print();
+
+            GeneticAlgorithm ga = new GeneticAlgorithm(20,9, new Tuple<int, int>(3, 3),cost,3000, 3, 0.8f, 0.8f);
+            ChromosomeCode theBest = ga.run();
+
+            MatrixUtil<int>.print(theBest.chromosomeCode);
+            
+
+            Console.WriteLine("Total cost of the best searched solution: " + theBest.totalCost);
+
+
+            /*
+             Population populationZero = new Population(25, 9, new Tuple<int, int>(3, 3), cost);
+
+             * int numberOfPopulation = 5;
+            for (int i = 0; i < numberOfPopulation; i++)
+            {
+                Population nextPop = new Population(currentPop, 10, cost);
+                currentPop = nextPop;
+            }
+
+            MatrixUtil<int>.print(currentPop.getTheBestFromAll().chromosomeCode);
+            
+
+
+
+            
 
             MatrixUtil<int>.print(populationZero.population[0].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[1].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[2].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[3].chromosomeCode);
             MatrixUtil<int>.print(populationZero.population[4].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[5].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[6].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[7].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[8].chromosomeCode);
+            MatrixUtil<int>.print(populationZero.population[9].chromosomeCode);
 
-            List<ChromosomeCode> child =populationZero.OnePointCrossOverTwoChilds(populationZero.population[0], populationZero.population[4]);
+
+            
+            List<ChromosomeCode> child = populationZero.OnePointCrossOverTwoChilds(populationZero.population[0], populationZero.population[4]);
 
             Console.WriteLine("");
             Console.WriteLine("");
@@ -45,46 +79,42 @@ namespace Genetic_Algorithm_1
             populationZero.mutation(populationZero.population[1]);
 
             MatrixUtil<int>.print(populationZero.population[1].chromosomeCode);
+            
 
 
 
+            Console.Write("Roullette has choosen a matrix: ");
+            MatrixUtil<int>.print((populationZero.roulletteSelection()).chromosomeCode);
 
 
-            // ChromosomeCode code = populationZero.population.ElementAt(20);
-            // Console.WriteLine("Fitness Value: " + code.fitnessValue + ", total Cost: " + code.totalCost);
+            Console.WriteLine(" ");
 
-            /*
-            Console.WriteLine("{0:N6}", code.fitnessValue);
 
-            foreach(ChromosomeCode cd in populationZero.population) {
-                Console.WriteLine("{0:N6}", cd.fitnessValue);
+            ChromosomeCode code = populationZero.population.ElementAt(20);
+            Console.WriteLine("Fitness Value: " + code.fitnessValue + ", total Cost: " + code.totalCost);
+
+
+            // Console.WriteLine("{0:N6}", code.fitnessValue);
+
+            foreach (ChromosomeCode cd in populationZero.population) {
+                Console.Write("{0:N6}", cd.probOfBeingSelected);
+                Console.Write(" ");
+                Console.WriteLine("{0:N6}", cd.totalCost);
 
             }
-            */
+            
 
 
-            foreach (ChromosomeCode cd in populationZero.population)
-            {
-               
-                Console.WriteLine("{0:N6}", cd.probOfBeingSelected + ", total Cost: " + cd.totalCost);
-
-            }
-
-           
-
-
-
-
-            // int[, ] tb = theBest.getMatrixManhattanDist();
-            // Console.WriteLine(" ");
+            int[, ] tb = code.getMatrixManhattanDist();
+            Console.WriteLine(" ");
 
             // MatrixUtil<int>.print(tb);
 
-            // MatrixUtil<int>.print(tb.getMatrixManhattanDist());
+            MatrixUtil<int>.print(tb);
 
-            // MatrixUtil<int>.print(cost.C);
-            //Console.WriteLine(" ");
-            //MatrixUtil<int>.print(cost.F);
+            MatrixUtil<int>.print(cost.C);
+            Console.WriteLine(" ");
+            MatrixUtil<int>.print(cost.F);
 
             /*
             StreamReader fs2 = new StreamReader(_filePath + "/data/hard/hard_cost.json");
@@ -156,8 +186,6 @@ namespace Genetic_Algorithm_1
             toprint.ForEach(elem =>Console.Write(elem));
         }
 
-      
-
 
     }
 
@@ -166,9 +194,7 @@ namespace Genetic_Algorithm_1
 
 
 
-// implementacja wczytywania danych/ładowanie danych 
-//fintess method (metoda przystosowania, czy dane rozwiazanie spełnia kryteria)
-//metoda losowa (tworzenie generacji)
+
 
 
 
