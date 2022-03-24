@@ -6,10 +6,9 @@ using System.Text;
 namespace Genetic_Algorithm_1
 {
 
-
-
     public static class MatrixUtil<T> {
         
+
         public static void fillMatrixFromList(List<T> fillFrom, T[,] matrix, T defaultValue)
         {
             var iter = fillFrom.GetEnumerator();
@@ -33,7 +32,7 @@ namespace Genetic_Algorithm_1
 
         public static T[,]  permutateMatrix(int numOfSwapped, T[,] matrix, T defaultVal) {
             List<T> permutation = PermutationUtil<T>.permutate(rewriteToList(matrix), numOfSwapped);
-            T[,] mtx = new T[MatrixUtil<T>.getNumOfCols(matrix), MatrixUtil<T>.getNumOfRows(matrix)];
+            T[,] mtx = new T[ MatrixUtil<T>.getNumOfRows(matrix), MatrixUtil<T>.getNumOfCols(matrix)];
             fillMatrixFromList(permutation,mtx, defaultVal);
             return mtx;
         }
@@ -112,7 +111,10 @@ namespace Genetic_Algorithm_1
     public static  class PermutationUtil<T>
     {
         private const int NUMBER_OF_SWAPPED = 3;
-        
+
+
+       
+
         public static  List<T> permutate(List<T> toPermute, int nTOSwap = NUMBER_OF_SWAPPED )
         {
             Random randGenerator = new Random();
@@ -160,9 +162,7 @@ namespace Genetic_Algorithm_1
     }
 
     public static class MathUtil {
-        public static float normalizeData(float max, float min, float toNormalize) {
-            return (toNormalize - min) / max - min;
-        }
+       
 
         public static float nextFloat(float min, float max)
         {
@@ -180,15 +180,7 @@ namespace Genetic_Algorithm_1
         }
 
 
-        public static void printList(int[] arr)
-        {
-            Console.WriteLine("");
-            foreach (int elem in arr)
-            {
-                Console.Write(arr +", ");
-            }
-            Console.WriteLine("");
-        }
+      
 
     }
 }

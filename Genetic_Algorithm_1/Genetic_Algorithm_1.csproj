@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ChooseOperator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DotLiquid" Version="2.2.595" />
     <PackageReference Include="Grpc.Core" Version="2.44.0" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0-beta01" />

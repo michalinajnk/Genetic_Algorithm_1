@@ -39,59 +39,81 @@ namespace Genetic_Algorithm_1
         }
 
         public ChromosomeCode run() {
+           
            Population previous=new Population(number_of_individuals, numOfMachines, facilitySize,cost);
-           theBestSolution = previous.best;
+            theBestSolution = previous.best;
            int numberOfPop = 0;
-            float r = MathUtil.nextFloat(0, 1);
+           float r = MathUtil.nextFloat(0.000f, 1.011f);
             while (numberOfPop < number_of_generations)
             {
                 current = new Population(previous, cost);
-
-                while (current.Count() < previous.Count())
+                
+                while (current.Count() < number_of_individuals)
                 {
-                    ChromosomeCode parent1 = previous.roulletteSelection();  
-                    ChromosomeCode parent2 = previous.roulletteSelection();
+                    List<ChromosomeCode> children = new List<ChromosomeCode>();
+                    List<ChromosomeCode> parents = previous.competitionSelectionTwoParent(size_of_competition, cost);
+
+                 //   ChromosomeCode parent1 = parents[0]; //previous.competitionSelection(size_of_competition, cost);  
+
+                //    ChromosomeCode parent2 = parents[1]; //previous.roulletteSelection();
+
+                    ChromosomeCode parent1 = previous.roulletteSelection(cost);
+                    ChromosomeCode parent2 = previous.roulletteSelection(cost);
+                   
+
+                    if (parent1.isTheSame(parent2) || current.Count()%9  ==  8) { 
+                       parent1.avoidLocalOptimum();
+                    }
+                    r = MathUtil.nextFloat(0.000f, 1.011f);
 
                     if (r < probability_of_crossover)
                     {
-                        current.Add(previous.OnePointCrossOver2(parent1, parent2), cost);
-                        r = MathUtil.nextFloat(0, 1);
+             
+                        children.AddRange(previous.OnePointCrossOverTwoChilds(parent1, parent2));
+                       
                     }
                     else {
-                        current.Add(parent1.totalCost < parent2.totalCost ? parent1 : parent2, cost);
+                        children.Add(new ChromosomeCode(parent1, cost));
+                        children.Add(new ChromosomeCode(parent2, cost));
                     }
-                 
-                    foreach (ChromosomeCode code in current.population) {
 
-                        if (r < probability_of_mutation) {
-                            current.mutation(code);
+                    foreach (ChromosomeCode child in children)
+                    {
+                        if (MathUtil.nextFloat(0.000f, 1.011f) < probability_of_mutation)
+                        {
+                            child.mutation(cost);
+
+                        }
+                        if (child.totalCost < theBestSolution.totalCost) {
+                            theBestSolution = child;
                         }
 
-                        r = MathUtil.nextFloat(0, 1);
+                        current.Add(child, cost);
+
                     }
 
-                    current.evaluate(theBestSolution);
-
-                    if (current.best.isBetterThan(previous.best)) {
-                        theBestSolution = current.best;
-                    }
-
+                       
                 }
+
+                current.evaluate();
+                if (current.best.isBetterThan(previous.best)) {
+                    theBestSolution = current.best;
+                }
+
+                
 
                 previous = current;
                 numberOfPop++;
 
             }
-            
 
             return theBestSolution;
 
-        }
- 
-      
-
-
+        }  
+            
     }
+ 
+  
 
 
     class Population {
@@ -123,29 +145,50 @@ namespace Genetic_Algorithm_1
 
         public Population(int numberOfCodes, int numOfMachines, Tuple<int, int> facilitySize, Cost cost) {
             generator = new ChromosomeCodeGenerator(facilitySize, numOfMachines, cost);
+            population = new List<ChromosomeCode>();
             this.numberOfCodes = numberOfCodes;
-            population = generatePopulationZero();
-            best = getTheBestFromAll();
-            evaluate(best);
+            generateAndGetTheBest(numberOfCodes);
+          
+            evaluate();
         }
 
-        public void evaluate(ChromosomeCode theBest) {
-            setForAllFitnessAfter2(theBest);
-            setProbForAll();
-            best = theBest;
+        public void evaluate() {
+            setForAllFitnessAfter2(best);
+            setConstraintForRouletteSelection();
+            
         }
 
         public Population(Population prevPop, Cost cost)
         {
 
-            generator= prevPop.generator;
+            generator=prevPop.generator;
             this.numberOfCodes =prevPop.numberOfCodes;
             population = new List<ChromosomeCode>();
+            AddAll(prevPop.filterTheBest(0.1, cost), cost);
+            Add(new ChromosomeCode(prevPop.best, cost), cost);
+            best = population[0];
 
 
         }
 
-      
+        public List<ChromosomeCode> competitionSelectionTwoParent(int numberOfCodes, Cost cost)
+        {
+            Random rand = new Random();
+            int comPointStart= rand.Next(0, Count()-1-numberOfCodes);
+            List<ChromosomeCode> shuffledCodes = population.GetRange(comPointStart, numberOfCodes);
+
+   
+            shuffledCodes.Sort((x, y) => x.totalCost.CompareTo(y.totalCost));
+
+          
+            return shuffledCodes.GetRange(0, 2);
+
+
+        }
+
+
+
+
 
 
         public ChromosomeCode competitionSelection(int numberOfCodes, Cost cost)
@@ -153,8 +196,11 @@ namespace Genetic_Algorithm_1
             if (this.numberOfCodes==numberOfCodes) { return best; }
             List<ChromosomeCode> shuffledCodes = PermutationUtil<ChromosomeCode>.permutate(population, (int)(numberOfCodes/3) + 1).GetRange(0, numberOfCodes);
             shuffledCodes.Sort((x, y) => x.totalCost.CompareTo(y.totalCost));
-            return new ChromosomeCode(shuffledCodes.First(), cost);
-
+           
+            shuffledCodes.First().wasSelected=true;
+            return shuffledCodes.First();
+           
+           
         }
 
         public ChromosomeCode competitionSelectionRatio(int ratio, Cost cost)
@@ -162,72 +208,71 @@ namespace Genetic_Algorithm_1
             if (this.numberOfCodes*ratio == 1) { return population.First(); }
             List<ChromosomeCode> shuffledCodes = PermutationUtil<ChromosomeCode>.permutate(population, (int)(numberOfCodes/3) + 1).GetRange(0, (int) (numberOfCodes*ratio));
             shuffledCodes.Sort((x, y) => x.totalCost.CompareTo(y.totalCost));
-            return new ChromosomeCode( shuffledCodes.First(), cost);
+          
+                return shuffledCodes.First();
+          
 
         }
 
-        public ChromosomeCode getChromosomeFromRoulleteValue(float roulleteVal) {
+
+
+
+        private ChromosomeCode getChromosomeFromRoulleteValue(float roulleteVal, Cost cost) {
+          //  sortPopulationByTotalCost(cost);
             foreach (ChromosomeCode code in population){
+
                 if (roulleteVal >= code.rangeOfProb.Item1 &&  roulleteVal <=code.rangeOfProb.Item2)
                 {
+                    code.wasSelected=true;
                     return code;
                 }
                
             }
-            return null;
+            return best;
         }
 
        
 
-        public ChromosomeCode roulletteSelection() { 
-            float r = MathUtil.nextFloat(0, 1);
+        public ChromosomeCode roulletteSelection(Cost cost) { 
+            float r = MathUtil.nextFloat(0.000f, 1.011f);
             Console.WriteLine("Roulette hase choosen: " + r);
-            return getChromosomeFromRoulleteValue(r);
+            return getChromosomeFromRoulleteValue(r, cost);
            
         }
 
        
 
+        public float probabilityOfSelection(int IndexOfChromosomeCode) {
+            return population[IndexOfChromosomeCode].fitnessValue/ population.Sum(x => x.fitnessValue);
+        }
 
-        public float normalizedFitnessVal(int IndexOfChromosomeInPop,int rangeOfIteration)
+
+     
+
+       
+
+        public void setForAllFitnessAfter2(ChromosomeCode best)
         {
-            //traversing through the chromosomeCode pod indeksem
-            int score = 0;
-           
-            int[,] checkMyFintessVal = population[IndexOfChromosomeInPop].chromosomeCode;
-            int[,] theBestChromosomeYet = getTheBestFromRange(rangeOfIteration).chromosomeCode;
-            
-
-            for (int i = 0; i < MatrixUtil<int>.getNumOfRows(checkMyFintessVal); i++) {
-                for (int j = 0; j < MatrixUtil<int>.getNumOfCols(checkMyFintessVal); j++) {
-                    if (checkMyFintessVal[i, j] == theBestChromosomeYet[i, j]) {
-                        score +=1;
-                    }
-                }
+            for (int i = 0; i < population.Count; i++)
+            {
+                population[i].setFitnessValue(normalizedFitnessVal2(i, best));
+               
             }
 
-            population[IndexOfChromosomeInPop].setWeight(score);
-            float res = score /(float) (generator.facilitySize.Item1 * generator.facilitySize.Item2);
-
-            //normalize score to a
-            //[0,1] ;
-            return res; 
         }
 
+
+  
         public float normalizedFitnessVal2(int IndexOfChromosomeInPop, ChromosomeCode theBest)
         {
             //traversing through the chromosomeCode pod indeksem
             int score = 0;
 
-            int[,] checkMyFintessVal = population[IndexOfChromosomeInPop].chromosomeCode;
-            int[,] theBestChromosomeYet = theBest.chromosomeCode;
-
-
-            for (int i = 0; i < MatrixUtil<int>.getNumOfRows(checkMyFintessVal); i++)
+            for (int i = 0; i < MatrixUtil<int>.getNumOfRows(theBest.chromosomeCode); i++)
             {
-                for (int j = 0; j < MatrixUtil<int>.getNumOfCols(checkMyFintessVal); j++)
+                for (int j = 0; j < MatrixUtil<int>.getNumOfCols(theBest.chromosomeCode); j++)
                 {
-                    if (checkMyFintessVal[i, j] == theBestChromosomeYet[i, j])
+                    if (population[IndexOfChromosomeInPop].chromosomeCode[i, j] == theBest.chromosomeCode[i, j])
                     {
                         score +=1;
                     }
@@ -243,52 +288,11 @@ namespace Genetic_Algorithm_1
         }
 
 
-
-        public float probabilityOfSelection(int IndexOfChromosomeCode) {
-            return population[IndexOfChromosomeCode].fitnessValue/ population.Sum(x => x.fitnessValue);
-        }
-
-
-     
-
-        public void setForAllFitness(int lastIndex)
-        {
-            for (int i = 0; i < lastIndex; i++)
-            {
-                population[i].setFitnessValue(normalizedFitnessVal(i,lastIndex));
-            }
-
-        }
-
-        public void setForAllFitnessAfter2(ChromosomeCode best)
-        {
-            for (int i = 0; i < population.Count; i++)
-            {
-                population[i].setFitnessValue(normalizedFitnessVal2(i, best));
-               
-               
-
-            }
-
-        }
-
-        public void setForAllFitnessAfter()
-        {
-            for (int i = 0; i < population.Count; i++)
-            {
-                population[i].setFitnessValue(normalizedFitnessVal(i, population.Count));
-
-
-
-            }
-
-        }
-
-
-        public void setProbForAll() {
+        public void setConstraintForRouletteSelection() {
             float sum = 0;
             float startRange = 0;
             float endRange = 0;
+
             for (int i = 0; i <Count(); i++)
             {
                 startRange = sum;
@@ -301,37 +305,7 @@ namespace Genetic_Algorithm_1
 
         }
 
-
-        public void mutation(ChromosomeCode code) {
-           code.rewriteT(MatrixUtil<int>.permutateMatrix(code.weight, code.chromosomeCode, 0));
- 
-
-        }
-
-
-
-        public void  print() {
-            foreach (ChromosomeCode code in population) {
-                code.print();
-            }
-        }
-
-        public List<ChromosomeCode> generatePopulationZero()
-        {
-            population = new List<ChromosomeCode>();
-            ChromosomeCode current = generator.generateOne();
-            population.Add(current);
-            foreach (int value in Enumerable.Range(1, numberOfCodes))
-            {
-                ChromosomeCode next = generator.generateNext(current);
-                population.Add(next);
-               
-            }
-
-           
-            return population;
-        }
-
+       
         public void  sortPopulationByTotalCost(Cost cost) {
 
             population.Sort((x, y) => x.totalCost.CompareTo(y.totalCost));
@@ -345,12 +319,9 @@ namespace Genetic_Algorithm_1
             return population.Average(x => x.totalCost);
         }
 
-        public double getFintessValue(ChromosomeCode code) {
+     
 
-            var listDesc=population.OrderByDescending(x => x.totalCost).ToList();
-            return listDesc.IndexOf(code)/numberOfCodes;
-        }
-
+        
         public List<ChromosomeCode> OnePointCrossOverTwoChilds(ChromosomeCode par1, ChromosomeCode par2)
         {
             List<ChromosomeCode> children = new List<ChromosomeCode>();
@@ -363,8 +334,7 @@ namespace Genetic_Algorithm_1
 
 
 
-
-
+        /*
         public ChromosomeCode OnePointCrossOver(ChromosomeCode par1, ChromosomeCode par2)
         {
             List<int> parentCode1 = new List<int>(MatrixUtil<int>.rewriteToList(par1.chromosomeCode));
@@ -390,6 +360,7 @@ namespace Genetic_Algorithm_1
             return generator.generateFromList(fixChromosomeCode(parentCode1, parentCode2, childList, crossPoint));
 
         }
+        */
 
         public ChromosomeCode OnePointCrossOver2(ChromosomeCode par1, ChromosomeCode par2)
         {
@@ -413,9 +384,11 @@ namespace Genetic_Algorithm_1
             Dictionary<int, int> restOfChild = new Dictionary<int, int>(); 
             for (int i = crossPoint; i < parentCode1.Count(); i++)
             {
+               
                 int value = parentCode1[i];
                 int key = parentCode2.IndexOf(value);
-                restOfChild.Add(key, value);
+                if (restOfChild.ContainsKey(key)) { continue; }
+                else { restOfChild.Add(key, value); }
             }
             foreach (var item in restOfChild.OrderBy(x => x.Key)) {
                 childList.Add(item.Value);
@@ -425,6 +398,7 @@ namespace Genetic_Algorithm_1
 
         }
 
+        /*
         private List<int> fixChromosomeCode(List<int> par1, List<int> par2, List<int> chromosomeCode, int crossPoint)
         {
 
@@ -462,7 +436,7 @@ namespace Genetic_Algorithm_1
             return child;
         }
 
-
+        
  
 
 
@@ -498,37 +472,53 @@ namespace Genetic_Algorithm_1
             return theBestOne;
         }
 
+        public ChromosomeCode getTheBestFromAll(Cost cost)
+        {
+            sortPopulationByTotalCost(cost);
+            return population[0];
+        }
+
+        */
 
 
-        public ChromosomeCode generateAndGetTheBest(int numOfCodes) {
+        public void generateAndGetTheBest(int numOfCodes) {
             ChromosomeCode theBestOne = null;
             ChromosomeCode next = generator.generateOne();
+            population.Add(next);
+            MatrixUtil<int>.print(next.chromosomeCode);
 
             for (int i = 0; i < numOfCodes; i++)
             {
                 next = generator.generateNext(next);
+                population.Add(next);
+                MatrixUtil<int>.print(next.chromosomeCode);
                 if (theBestOne == null || theBestOne.totalCost > next.totalCost) {
                     theBestOne = next;
                 }
             }
-            return theBestOne;
+            best = theBestOne;
+            Console.WriteLine("The best one");
+            MatrixUtil<int>.print(best.chromosomeCode);
         }
 
 
 
         public List<ChromosomeCode> filterTheBest(double ratio, Cost cost) // ratio as a percent filter value for population (hetting only ratio of all the chromosomeCodes in pop)
         {
-            //the list is sorted in ascending order by a total cost
+            List<ChromosomeCode> filtered = new List<ChromosomeCode>();
+            sortPopulationByTotalCost(cost);
             int lastIndex =Convert.ToInt32(numberOfCodes * ratio);
-            return population.GetRange(0, lastIndex);
+            foreach (ChromosomeCode cd in population.GetRange(0, lastIndex)) {
+                filtered.Add(new ChromosomeCode(cd, cost));
+            }
+
+            return filtered;
+
            
         }
-        
-        
+            
 
-     }
-
-
+    }
 
 
 
@@ -575,7 +565,6 @@ namespace Genetic_Algorithm_1
             ChromosomeCode code = new ChromosomeCode(list, facilitySize, numberOfMachines, cost);
             code.facilitySize = facilitySize;
             code.numberOfMachines = numberOfMachines;
-            code.setTotalCost(cost);
             return code;
         }
 
@@ -586,8 +575,9 @@ namespace Genetic_Algorithm_1
 
 
 
-        class ChromosomeCode
-        {
+    class ChromosomeCode
+    {
+            public bool wasSelected = false;
             public int[,] chromosomeCode;
             public int numberOfMachines { get; set; }
             public int totalCost { get; set; }
@@ -610,18 +600,33 @@ namespace Genetic_Algorithm_1
                 chromosomeCode = new int[facilitySize.Item1, facilitySize.Item2];
                 this.facilitySize = facilitySize;
                 numberOfMachines = numOfMach;
-                fillDefaultMatrix(numOfMach, 0);
+                fillDefaultMatrix(numOfMach, -1);
 
+            }
+
+            public void mutation(Cost cost)
+            {
+                rewriteT(MatrixUtil<int>.permutateMatrix(4,chromosomeCode, -1));
+                setTotalCost(cost);
+
+
+            }
+
+            public void avoidLocalOptimum() { 
+                
+               List<int> offsetList =  MatrixUtil<int>.rewriteToList(chromosomeCode);
+               offsetList.Add(offsetList[0]);
+                MatrixUtil<int>.fillMatrixFromList(offsetList.GetRange(1, numberOfMachines), chromosomeCode, -1);
             }
 
 
 
             public ChromosomeCode(List<int> list, Tuple<int, int> facilitySize, int numOfMach, Cost cost)
             {
-                chromosomeCode = new int[facilitySize.Item1, facilitySize.Item2];
-                numberOfMachines = numOfMach;
                 this.facilitySize = facilitySize;
-                MatrixUtil<int>.fillMatrixFromList(list, chromosomeCode, 0);
+                chromosomeCode = new int[facilitySize.Item1, facilitySize.Item2];
+                numberOfMachines = numOfMach;  
+                MatrixUtil<int>.fillMatrixFromList(list, chromosomeCode, -1);
                 setTotalCost(cost);
 
             }
@@ -631,7 +636,7 @@ namespace Genetic_Algorithm_1
 
                 for (int i = 0; i < MatrixUtil<int>.getNumOfRows(matrix); i++)
                 {
-                    for (int j = 0; j <  MatrixUtil<int>.getNumOfRows(matrix); j++)
+                    for (int j = 0; j <  MatrixUtil<int>.getNumOfCols(matrix); j++)
                     {
                         chromosomeCode[i, j] = matrix[i, j];
                     }
@@ -657,129 +662,109 @@ namespace Genetic_Algorithm_1
             }
 
 
-        public bool isBetterThan(ChromosomeCode other) {
+            public bool isBetterThan(ChromosomeCode other) {
 
-            if(totalCost < other.totalCost) { return true; }
-            return false;
-        } 
-
-
+                if(totalCost < other.totalCost) { return true; }
+                return false;
+            } 
 
 
-        public ChromosomeCode(ChromosomeCode chromosome, int numOfMach)
-        {
-            chromosomeCode = MatrixUtil<int>.permutateMatrix(3, chromosome.chromosomeCode, 0);
-            this.numberOfMachines = numOfMach;
-                
+            public bool isTheSame(ChromosomeCode chromosome) {
 
+            bool same = true;
 
-        }
-
-        public ChromosomeCode(ChromosomeCode chromosome, Cost cost)
-        {
-            this.facilitySize = chromosome.facilitySize;
-            chromosomeCode = new int[chromosome.facilitySize.Item1, chromosome.facilitySize.Item2];
-            numberOfMachines = chromosome.numberOfMachines;
             for (int i = 0; i < MatrixUtil<int>.getNumOfRows(chromosome.chromosomeCode); i++)
             {
                 for (int j = 0; j < MatrixUtil<int>.getNumOfCols(chromosome.chromosomeCode); j++)
                 {
-                    chromosomeCode[i, j] = chromosome.chromosomeCode[i, j];
+                    same = true & chromosomeCode[i, j] == chromosome.chromosomeCode[i, j];
+                    
                 }
             }
 
-            setTotalCost(cost);
-        }
+            return same;
+            }
 
 
 
-        public void setTotalCost(Cost cost)
-        {
-            this.totalCost = getTotalCost(cost);
-        }
 
-            public void fillDefaultMatrix(int end, int defaultValue)
+            public ChromosomeCode(ChromosomeCode chromosome, int numOfMach)
             {
-                List<int> fillFrom = Enumerable.Range(1, end).ToList();
-                var iter = fillFrom.GetEnumerator();
+                chromosomeCode = MatrixUtil<int>.permutateMatrix(4, chromosome.chromosomeCode, -1);
+                this.numberOfMachines = numOfMach;
+                
 
 
-                for (int i = 0; i < MatrixUtil<int>.getNumOfRows(chromosomeCode); i++)
+            }
+
+            public ChromosomeCode(ChromosomeCode chromosome, Cost cost)
+            {
+                this.facilitySize = chromosome.facilitySize;
+                chromosomeCode = new int[chromosome.facilitySize.Item1, chromosome.facilitySize.Item2];
+                numberOfMachines = chromosome.numberOfMachines;
+                for (int i = 0; i < MatrixUtil<int>.getNumOfRows(chromosome.chromosomeCode); i++)
                 {
-                    for (int j = 0; j < MatrixUtil<int>.getNumOfCols(chromosomeCode); j++)
+                    for (int j = 0; j < MatrixUtil<int>.getNumOfCols(chromosome.chromosomeCode); j++)
                     {
-                        if (iter.MoveNext())
-                        {
-                            chromosomeCode[i, j] = iter.Current;
-                        }
-                        else
-                        {
-                            chromosomeCode[i, j] = defaultValue;
-                        }
+                        chromosomeCode[i, j] = chromosome.chromosomeCode[i, j];
                     }
-
                 }
 
-
-            }
-
-            public void permutateMatrix(int numOfSwapped, int defaultVal)
-            {
-                List<int> permutation = PermutationUtil<int>.permutate(MatrixUtil<int>.rewriteToList(chromosomeCode), numOfSwapped);
-                fillDefaultMatrix(numberOfMachines-1, defaultVal);
+                setTotalCost(cost);
             }
 
 
 
-
-            public int Compare(ChromosomeCode other)
+            public void setTotalCost(Cost cost)
             {
-
-                if (other.chromosomeCode == this.chromosomeCode)
-                {
-                    return 1;
-                }
-                else
-                {
-                    return -1;
-                }
-
-            }
-
-
-            public void fillChromosomeValues()
-            {
-                List<int> fillfrom = new List<int>(Enumerable.Range(0, numberOfMachines));
-                MatrixUtil<int>.fillMatrixFromList(fillfrom, chromosomeCode, 0);
-
-            }
-
-            public void print()
-            {
-                MatrixUtil<int>.print(chromosomeCode);
-            }
-
-
-            public int getTotalCost(Cost cost)
-            {
-
-                int totalCost = 0;
+                totalCost = 0;
 
                 for (int i = 0; i < numberOfMachines; i++)
                 {
                     for (int j = 0; j < numberOfMachines; j++)
                     {
 
-
+                      
                         totalCost += cost.getMatrixCellCost(i, j) * getMatrixManhattanDist()[i, j] * cost.getMatrixCellFlow(i, j);
                     }
                 }
 
-                return totalCost;
             }
 
+            public void fillDefaultMatrix(int end, int defaultValue)
+            {
+                    List<int> fillFrom = Enumerable.Range(0, end).ToList();
+                    var iter = fillFrom.GetEnumerator();
 
 
+                    for (int i = 0; i < MatrixUtil<int>.getNumOfRows(chromosomeCode); i++)
+                    {
+                        for (int j = 0; j < MatrixUtil<int>.getNumOfCols(chromosomeCode); j++)
+                        {
+                            if (iter.MoveNext())
+                            {
+                                chromosomeCode[i, j] = iter.Current;
+                            }
+                            else
+                            {
+                                chromosomeCode[i, j] = defaultValue;
+                            }
+                        }
+
+                    }
+
+
+            }
+ 
+            /*
+            public void fillChromosomeValues()
+            {
+                List<int> fillfrom = new List<int>(Enumerable.Range(1, numberOfMachines-1));
+                MatrixUtil<int>.fillMatrixFromList(fillfrom, chromosomeCode, 0);
+
+            }
+            */
+            
 
 
             public int[,] getMatrixManhattanDist()
